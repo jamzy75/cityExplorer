@@ -1,0 +1,38 @@
+:root {
+    --bg:#0f1115; --text:#e7e7ea; --muted:#9aa0a6; --card:#161a22; --border:#2a2f3a; --acc:#c6a15b;
+}
+html[data-theme='light'] { --bg:#ffffff; --text:#111213; --muted:#656b73; --card:#f3f4f6; --border:#d6d9de; --acc:#b0893a; }
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+
+.shell{min-height:100vh;display:grid;grid-template-rows:auto 1fr auto}
+.topbar{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:rgba(0,0,0,.25);backdrop-filter:blur(6px)}
+.brand{color:var(--text);text-decoration:none;font-weight:700}
+.nav a{color:var(--text);text-decoration:none;margin-right:12px}
+.theme{padding:6px 10px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer}
+.content{max-width:1100px;margin:0 auto;padding:24px}
+.footer{padding:16px;color:var(--muted);text-align:center}
+
+.controls{display:flex;gap:8px;align-items:center;margin-bottom:16px}
+.controls input,.controls select,.controls button{padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text)}
+.controls button{cursor:pointer}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.card{display:block;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--card);color:inherit;text-decoration:none}
+.card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.card .meta{padding:10px}
+.card .title{font-weight:600}
+.card .sub{color:var(--muted);font-size:.9rem}
+
+.details{display:grid;grid-template-columns:260px 1fr;gap:18px}
+.flag{width:100%;border-radius:12px;border:1px solid var(--border)}
+.muted{color:var(--muted)}
+.actions .btn{display:inline-block;margin-top:8px;background:var(--acc);color:#111;padding:10px 14px;border-radius:10px;text-decoration:none}
+
+.current{display:grid;gap:6px;margin:12px 0}
+.current .temp{font-size:2rem;font-weight:700}
+.forecast{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.day{border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--card)}
+.day .d{font-weight:600}
+.day .t{margin:6px 0}
