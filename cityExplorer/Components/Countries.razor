@@ -6,36 +6,36 @@
 <h1>Countries</h1>
 
 <div class="controls">
-    <!-- search (runs on each keystroke) -->
+    <!-- this is search -->
     <input value="@search"
-           @oninput=@((ChangeEventArgs e) =>
-                    {
-                        search = e?.Value?.ToString() ?? string.Empty;
-                        ApplyFilters();
-                    })
+           @oninput="@((ChangeEventArgs e) =>
+               {
+                   search = e?.Value?.ToString() ?? string.Empty;
+                   ApplyFilters();
+               })"
            placeholder="Search by name..." />
 
-    <!-- region filter -->
+    <!-- this is region filter -->
     <select value="@regionFilter"
-            @onchange=@((ChangeEventArgs e) =>
-                      {
-                          regionFilter = e?.Value?.ToString();
-                          ApplyFilters();
-                      })>
+            @onchange="@((ChangeEventArgs e) =>
+                {
+                    regionFilter = e?.Value?.ToString();
+                    ApplyFilters();
+                })">
         <option value="">All regions</option>
         @foreach (Region r in Enum.GetValues<Region>())
         {
             <option value="@r">@r</option>
-        }
+        } 
     </select>
 
-    <!-- sort -->
+    <!-- this is sort -->
     <select value="@sortBy"
-            @onchange=@((ChangeEventArgs e) =>
-                      {
-                          sortBy = e?.Value?.ToString() ?? "name";
-                          ApplyFilters();
-                      })>
+            @onchange="@((ChangeEventArgs e) =>
+                {
+                    sortBy = e?.Value?.ToString() ?? "name";
+                    ApplyFilters();
+                })">
         <option value="name">Sort: Name</option>
         <option value="population">Sort: Population</option>
         <option value="area">Sort: Area</option>
@@ -43,12 +43,6 @@
 
     <button type="button" @onclick="ApplyFilters">Apply</button>
 </div>
-
-
-  
-
-
-
 
 @if (loading)
 {
@@ -85,9 +79,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        all = await CountryApi.GetAllAsync();   // fetch once
-        ApplyFilters();
+        all = await CountryApi.GetAllAsync();
         loading = false;
+        ApplyFilters();
     }
 
     void ApplyFilters()
@@ -97,9 +91,11 @@ else
         if (!string.IsNullOrWhiteSpace(search))
             q = q.Where(c => c.Name.Contains(search, StringComparison.OrdinalIgnoreCase));
 
-        if (!string.IsNullOrWhiteSpace(regionFilter) &&
-            Enum.TryParse<Region>(regionFilter, true, out var reg))
-            q = q.Where(c => c.Region == reg);
+        if (!string.IsNullOrWhiteSpace(regionFilter))
+        {
+            if (Enum.TryParse(regionFilter, true, out Region reg))
+                q = q.Where(c => c.Region == reg);
+        }
 
         items = sortBy switch
         {
