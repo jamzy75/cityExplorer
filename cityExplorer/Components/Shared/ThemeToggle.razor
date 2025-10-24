@@ -1,0 +1,15 @@
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<button class="theme" type="button" @onclick="Toggle">Theme</button>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await JS.InvokeVoidAsync("theme.init");
+    }
+
+    private async Task Toggle()
+        => await JS.InvokeAsync<string>("theme.toggle");
+}
