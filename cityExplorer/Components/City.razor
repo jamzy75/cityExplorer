@@ -1,0 +1,129 @@
+@page "/city"
+@using System.Globalization
+@using Microsoft.AspNetCore.WebUtilities
+@inject IWeatherService Weather
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<h1>City</h1>
+
+<div class="controls">
+    <input style="min-width:220px"
+           placeholder="City name (optional)"
+           @bind="name" />
+
+    <input style="width:130px"
+           placeholder="Latitude"
+           @bind="lat" />
+
+    <input style="width:130px"
+           placeholder="Longitude"
+           @bind="lon" />
+
+    <button @onclick="GetWeather">Get weather</button>
+</div>
+
+@if (loading)
+{
+    <p>Loading…</p>
+}
+else if (error is not null)
+{
+    <p class="muted">@error</p>
+}
+else if (data is null)
+{
+    <p class="muted">Enter latitude and longitude, then click <em>Get weather</em>. Or open
+        <code>/city?name=Kabul&lat=34.5553&lon=69.2075</code>.</p>
+}
+else
+{
+    <section class="current">
+        <div style="display:flex;gap:12px;align-items:baseline">
+            <div class="temp">@data.Current.TemperatureC.ToString("0.0")°C</div>
+            <div class="muted">@data.Current.Description</div>
+        </div>
+        <div class="muted">
+            @if (!string.IsNullOrWhiteSpace(name))
+            {
+                <span>@name • </span>
+            }
+            <span>@data.Timezone</span> •
+            <span>lat @data.Latitude.ToString("0.####"), lon @data.Longitude.ToString("0.####")</span>
+            • <span>@data.Current.Time.ToLocalTime().ToString("g")</span>
+        </div>
+    </section>
+
+    <section class="forecast">
+        @foreach (var d in data.Daily)
+        {
+            <div class="day">
+                <div class="d">@d.Date.ToString("ddd dd MMM")</div>
+                <div class="t">
+                    <strong>@d.MaxC.ToString("0")°</strong>
+                    <span class="muted"> / @d.MinC.ToString("0")°</span>
+                </div>
+                <div class="muted">Sunrise @d.Sunrise.ToLocalTime().ToString("t")</div>
+                <div class="muted">Sunset @d.Sunset.ToLocalTime().ToString("t")</div>
+            </div>
+        }
+    </section>
+}
+
+@code {
+    string name = "";
+    double lat, lon;
+    bool loading = false;
+    string? error;
+    CityWeather? data;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // read ?name=…&lat=…&lon=… if present
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        var q = QueryHelpers.ParseQuery(uri.Query);
+
+        if (q.TryGetValue("name", out var n)) name = n.ToString();
+
+        if (q.TryGetValue("lat", out var qlat) && double.TryParse(qlat, NumberStyles.Float, CultureInfo.InvariantCulture, out var latVal) &&
+            q.TryGetValue("lon", out var qlon) && double.TryParse(qlon, NumberStyles.Float, CultureInfo.InvariantCulture, out var lonVal))
+        {
+            lat = latVal; lon = lonVal;
+            await GetWeather(); // auto-load when coords are provided
+        }
+    }
+
+    async Task GetWeather()
+    {
+        error = null;
+        data = null;
+
+        if (double.IsNaN(lat) || double.IsNaN(lon))
+        {
+            error = "Coordinates look wrong. Try numbers like 34.5553 and 69.2075.";
+            return;
+        }
+
+        loading = true;
+        try
+        {
+            // keep URL in sync so refresh/bookmark works
+            var latStr = lat.ToString("0.######", CultureInfo.InvariantCulture);
+            var lonStr = lon.ToString("0.######", CultureInfo.InvariantCulture);
+            var qs = $"?name={Uri.EscapeDataString(name ?? string.Empty)}&lat={latStr}&lon={lonStr}";
+            Nav.NavigateTo("/city" + qs, replace: true);
+
+            data = await Weather.GetWeatherAsync(lat, lon);
+            if (data is null) error = "No weather data returned. The API might be having a moment.";
+        }
+        catch (Exception ex)
+        {
+            error = $"Failed to load weather: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}
