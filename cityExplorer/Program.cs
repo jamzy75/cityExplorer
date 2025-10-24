@@ -1,28 +1,54 @@
-using cityExplorer.Components;
+using CityExplorer;
+using CityExplorer.Components;
+using CityExplorer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
+builder.Services
+    .AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddHttpClient<ICountryService, CountryService>(c =>
+{
+    c.BaseAddress = new Uri("https://restcountries.com/v3.1/");
+    c.Timeout = TimeSpan.FromSeconds(20);
+});
+
+builder.Services.AddHttpClient<IWeatherService, OpenMeteoService>(c =>
+{
+    c.BaseAddress = new Uri("https://api.open-meteo.com/v1/");
+    c.Timeout = TimeSpan.FromSeconds(20);
+});
+
+builder.Services.AddHttpClient<IFxService, FrankfurterService>(c =>
+{
+    c.BaseAddress = new Uri("https://api.frankfurter.app/");
+    c.Timeout = TimeSpan.FromSeconds(15);
+});
+
+builder.Services.AddScoped<AppState>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
-
+app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapStaticAssets();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// Nice-to-have redirect
+app.MapGet("/", ctx =>
+{
+    ctx.Response.Redirect("/countries");
+    return Task.CompletedTask;
+});
 
 app.Run();
