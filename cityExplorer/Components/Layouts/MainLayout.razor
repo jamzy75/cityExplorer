@@ -1,0 +1,20 @@
+﻿@inherits LayoutComponentBase
+@inject IJSRuntime JS
+
+<HeadContent>
+    <link href="/css/app.css" rel="stylesheet" />
+</HeadContent>
+
+<div class="shell">
+    <header class="topbar">
+        <a class="brand" href="/countries">City Explorer</a>
+        <nav class="nav">
+            <a href="/countries">Countries</a>
+            <a href="/compare">Compare</a>
+            <ThemeToggle />
+        </nav>
+    </header>
+
+    <main class="content">@Body</main>
+    <footer class="footer">© @DateTime.UtcNow.Year City Explorer</footer>
+</div>
