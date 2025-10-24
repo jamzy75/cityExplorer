@@ -1,0 +1,47 @@
+@page "/compare"
+@inject Services.IFxService Fx
+@rendermode InteractiveServer
+
+<h1>Compare</h1>
+
+<div class="controls">
+    <select @bind="from">
+        @foreach (var c in common)
+        {
+            <option value="@c">@c</option>
+        }
+    </select>
+    <span>→</span>
+    <select @bind="to">
+        @foreach (var c in common)
+        {
+            <option value="@c">@c</option>
+        }
+    </select>
+    <select @bind="amountEnum">
+        @foreach (var a in Enum.GetValues<ConvertAmount>())
+        {
+            <option value="@a">@a (@((int)a))</option>
+        }
+    </select>
+    <button @onclick="Convert">Convert</button>
+</div>
+
+@if (result is not null)
+{
+    <p><strong>@((int)amountEnum) @from</strong> ≈ <strong>@result.Value.ToString("N2") @to</strong></p>
+}
+
+@code {
+    string[] common = new[] { "EUR", "USD", "GBP", "JPY", "AUD", "CAD", "CHF" };
+    string from = "EUR", to = "USD";
+    ConvertAmount amountEnum = ConvertAmount.Hundred;
+    decimal? result;
+
+    async Task Convert()
+    {
+        if (from == to) { result = (int)amountEnum; return; }
+        var rate = await Fx.ConvertAsync(from, to, 1m);
+        result = rate * (int)amountEnum;
+    }
+}
