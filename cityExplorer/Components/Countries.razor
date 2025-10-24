@@ -1,0 +1,113 @@
+@page "/countries"
+@inject ICountryService CountryApi
+@using CityExplorer.Models
+@rendermode InteractiveServer
+
+<h1>Countries</h1>
+
+<div class="controls">
+    <!-- search (runs on each keystroke) -->
+    <input value="@search"
+           @oninput=@((ChangeEventArgs e) =>
+                    {
+                        search = e?.Value?.ToString() ?? string.Empty;
+                        ApplyFilters();
+                    })
+           placeholder="Search by name..." />
+
+    <!-- region filter -->
+    <select value="@regionFilter"
+            @onchange=@((ChangeEventArgs e) =>
+                      {
+                          regionFilter = e?.Value?.ToString();
+                          ApplyFilters();
+                      })>
+        <option value="">All regions</option>
+        @foreach (Region r in Enum.GetValues<Region>())
+        {
+            <option value="@r">@r</option>
+        }
+    </select>
+
+    <!-- sort -->
+    <select value="@sortBy"
+            @onchange=@((ChangeEventArgs e) =>
+                      {
+                          sortBy = e?.Value?.ToString() ?? "name";
+                          ApplyFilters();
+                      })>
+        <option value="name">Sort: Name</option>
+        <option value="population">Sort: Population</option>
+        <option value="area">Sort: Area</option>
+    </select>
+
+    <button type="button" @onclick="ApplyFilters">Apply</button>
+</div>
+
+
+  
+
+
+
+
+@if (loading)
+{
+    <p>Loading…</p>
+}
+else if (items.Count == 0)
+{
+    <p>No matches.</p>
+}
+else
+{
+    <div class="grid">
+        @foreach (var c in items)
+        {
+            <a class="card" href="@($"/country/{c.Code}")" title="@c.Name">
+                <img src="@c.FlagPng" alt="@c.Name" />
+                <div class="meta">
+                    <div class="title">@c.Name</div>
+                    <div class="sub">@c.Region — pop @c.Population.ToString("N0")</div>
+                </div>
+            </a>
+        }
+    </div>
+}
+
+@code {
+    string search = "";
+    string? regionFilter;
+    string sortBy = "name";
+    bool loading = true;
+
+    List<Country> all = new();
+    List<Country> items = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        all = await CountryApi.GetAllAsync();   // fetch once
+        ApplyFilters();
+        loading = false;
+    }
+
+    void ApplyFilters()
+    {
+        IEnumerable<Country> q = all;
+
+        if (!string.IsNullOrWhiteSpace(search))
+            q = q.Where(c => c.Name.Contains(search, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(regionFilter) &&
+            Enum.TryParse<Region>(regionFilter, true, out var reg))
+            q = q.Where(c => c.Region == reg);
+
+        items = sortBy switch
+        {
+            "population" => q.OrderByDescending(c => c.Population).ToList(),
+            "area"       => q.OrderByDescending(c => c.Area).ToList(),
+            _            => q.OrderBy(c => c.Name).ToList()
+        };
+
+        StateHasChanged();
+    }
+}
