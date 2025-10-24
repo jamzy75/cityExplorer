@@ -1,0 +1,79 @@
+@page "/country/{Code}"
+@inject Services.ICountryService Countries
+@inject Services.IFxService Fx
+@rendermode InteractiveServer
+
+@if (loading)
+{
+    <p>Loading…</p>
+}
+else if (country is null)
+{
+    <p>Country not found.</p>
+}
+else
+{
+    <div class="details">
+        <img class="flag" src="@country.FlagPng" alt="@country.Name" />
+        <div class="info">
+            <h1>@country.Name (@country.Code)</h1>
+            <div class="muted">@country.Region • Capital: @country.Capital</div>
+            <p>Population: <strong>@country.Population.ToString("N0")</strong>, Area: <strong>@country.Area.ToString("N0")</strong> km²</p>
+            <p>Currency: <strong>@country.CurrencyCode</strong> — @country.CurrencyName</p>
+
+            @if (eurToLocal is not null)
+            {
+            <p>100 EUR ≈ <strong>@((100m * eurToLocal.Value).ToString("N2")) @country.CurrencyCode</strong></p>
+            }
+
+
+            @if (country.Neighbours.Count > 0)
+            {
+                <p><strong>Neighbours:</strong>
+                    @foreach (var n in country.Neighbours)
+                    {
+                        <a href="@($"/country/{n.Code}")">@n.Name</a>@(n == country.Neighbours.Last() ? "" : ", ")
+                    }
+                </p>
+            }
+
+            <div class="actions">
+                @if (country.Lat is not null && country.Lng is not null)
+                {
+                    <a class="btn" href="@($"/city?name={Uri.EscapeDataString(country.Capital ?? country.Name)}&lat={country.Lat}&lon={country.Lng}")">
+                        View weather for @(country.Capital ?? country.Name)
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Code { get; set; } = "";
+    bool loading = true;
+    Country? country;
+    decimal? eurToLocal;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        country = await Countries.GetByCodeAsync(Code);
+
+        if (country is not null &&
+            !string.IsNullOrWhiteSpace(country.CurrencyCode) &&
+            !string.Equals(country.CurrencyCode, "EUR", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var rate = await Fx.ConvertAsync("EUR", country.CurrencyCode, 1m);
+                eurToLocal = rate > 0m ? rate : null;   // hide if unsupported/failed
+            }
+            catch
+            {
+                eurToLocal = null; // never crash the page over FX
+            }
+        }
+
+        loading = false;
+    }
+}
